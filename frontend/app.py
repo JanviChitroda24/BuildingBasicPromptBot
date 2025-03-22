@@ -127,6 +127,7 @@ with col2:
                                 "age": st.session_state.age,
                                 "gender": st.session_state.gender
                             })
+                            print(response.json())
                             bot_response = response.json()["response"]
                             st.session_state.chat_history.append({"query": chat["intent_response"] + " Yes!", "response": bot_response})
                             st.rerun()

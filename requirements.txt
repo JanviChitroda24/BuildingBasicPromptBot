@@ -4,3 +4,4 @@ streamlit
 requests
 langchain-google-genai
 dotenv
+diagrams

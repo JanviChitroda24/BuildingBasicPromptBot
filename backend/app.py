@@ -57,7 +57,7 @@ intent_keywords = {
         "diet", "calories", "macros", "meal plan", "vegan", "keto", "paleo", "nutrition", "food"
     ],
     "skincare": [
-        "skincare", "moisturizer", "sunscreen", "acne", "pimples", "serum", "cleanser", "toner", "exfoliation", "anti-aging", "blemishes", "blackheads", "pores", "dark spots"
+        "skincare", "moisturizer", "sunscreen", "acne", "pimples", "serum", "cleanser", "toner", "exfoliation", "anti-aging", "blemishes", "blackheads", "pores", "dark spots", "skin"
     ],
     "common": [
         "fitness", "training", "healthy", "hydration", "weight loss", "metabolism", "protein", "carbs", "fat", "minerals", "vitamins", "fiber", "superfoods", "strength", "stamina"
