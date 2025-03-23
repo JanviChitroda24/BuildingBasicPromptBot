@@ -62,11 +62,33 @@ with col2:
 
         # Chat history container (newest at the top)
         with st.container():
-            for chat in reversed(st.session_state.chat_history):  # Reverse order
+            for index, chat in enumerate(reversed(st.session_state.chat_history)):  # Reverse order
                 with st.chat_message("user"):
                     st.write(chat["query"])
                 with st.chat_message("assistant"):
                     st.write(chat["response"])
+                    
+                    # Show "Yes" button if an intent_response exists
+                    if "intent_response" in chat and chat["intent_response"]:
+                        if st.button("Yes", key=f"yes_button_{index}"):
+                            # Re-send the query to FastAPI when "Yes" is clicked
+                            input_query = "My question: "+chat["intent_response"]+"User responded Yes. So provide infromation"
+                            response = requests.post(f"{API_URL}/send_message", json={
+                                "query": input_query,
+                                "name": st.session_state.name,
+                                "email": st.session_state.email,
+                                "age": st.session_state.age,
+                                "gender": st.session_state.gender
+                            })
+
+                            # Extract new response
+                            bot_response = response.json()["response"]
+
+                            # Append new response to chat history
+                            st.session_state.chat_history.append({"query": chat["intent_response"]+" Yes!", "response": bot_response})
+
+                            # Rerun script to display new message
+                            st.rerun()
 
         # Process user input after rendering UI
         if submit_button and user_query.strip():
@@ -81,11 +103,15 @@ with col2:
 
             # Extract response
             bot_response = response.json()["response"]
+            intent_response = response.json().get("intent_response", "")
 
             # Store query and response in session state
+            if intent_response:
+                st.session_state.chat_history.append({"query": user_query, "response": intent_response, "intent_response": intent_response})
+
             st.session_state.chat_history.append({"query": user_query, "response": bot_response})
 
-            # Rerun script to display new message while keeping input field at the top
+            # Rerun script to update UI
             st.rerun()
 
     else:
