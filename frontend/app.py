@@ -1,15 +1,17 @@
 import streamlit as st
 import requests
 
-# FastAPI server URL (adjust if running on a different host)
+# FastAPI server URL
 API_URL = "http://127.0.0.1:8000"
 
 # Streamlit App
 st.set_page_config(layout="wide", page_title="FitAura Bot")
 
-# Session State to track login/logout status
+# Session State Initialization
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []  # Store previous prompts and responses
 
 # Disable fields based on login status
 disable_fields = st.session_state.logged_in
@@ -20,6 +22,7 @@ def reset_fields():
     st.session_state.email = ""
     st.session_state.gender = "Select"
     st.session_state.age = 1
+    st.session_state.chat_history = []  # Clear chat history on logout
 
 def login_action():
     st.session_state.logged_in = True
@@ -51,11 +54,22 @@ with col2:
         # Chat UI when logged in
         st.subheader(f"Hello {st.session_state.name}, Welcome to FitAura! 👋")
         st.write("Let me know how I can help you today.")
-        
-        # User input field like ChatGPT
-        user_query = st.text_area("Type your question here...", height=100)
-        
-        if st.button("Submit"):
+
+        # Keep input field at the top
+        with st.container():
+            user_query = st.text_area("Type your question here...", height=100)
+            submit_button = st.button("Submit")
+
+        # Chat history container (newest at the top)
+        with st.container():
+            for chat in reversed(st.session_state.chat_history):  # Reverse order
+                with st.chat_message("user"):
+                    st.write(chat["query"])
+                with st.chat_message("assistant"):
+                    st.write(chat["response"])
+
+        # Process user input after rendering UI
+        if submit_button and user_query.strip():
             # Call FastAPI endpoint
             response = requests.post(f"{API_URL}/send_message", json={
                 "query": user_query,
@@ -64,9 +78,16 @@ with col2:
                 "age": st.session_state.age,
                 "gender": st.session_state.gender
             })
-            st.write("Query: ",response.json()["query"])  # Placeholder response
-            st.write("Response: ",response.json()["response"])  # Placeholder response
-        
+
+            # Extract response
+            bot_response = response.json()["response"]
+
+            # Store query and response in session state
+            st.session_state.chat_history.append({"query": user_query, "response": bot_response})
+
+            # Rerun script to display new message while keeping input field at the top
+            st.rerun()
+
     else:
         # Default content when logged out
         response = requests.get(f"{API_URL}/")
