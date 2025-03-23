@@ -67,12 +67,59 @@ with col2:
                     st.write(chat["query"])
                 with st.chat_message("assistant"):
                     st.write(chat["response"])
+
+                # Show "Yes" button if an intent_response exists
+                if "intent_response" in chat and chat["intent_response"]:
+                    if chat["intent_response"] == "common":
+                        st.write("Could you clarify? Are you asking about skincare, exercise, or nutrition?")
+                        
+                        col1, col2, col3 = st.columns(3)  # Create three buttons side by side
+                        
+                        with col1:
+                            if st.button("Excerise", key=f"fitness_button_{index}"):
+                                input_query = f"My question: {chat['query']}. User clarified: Fitness."
+                                response = requests.post(f"{API_URL}/send_message", json={
+                                    "query": input_query,
+                                    "name": st.session_state.name,
+                                    "email": st.session_state.email,
+                                    "age": st.session_state.age,
+                                    "gender": st.session_state.gender
+                                })
+                                bot_response = response.json()["response"]
+                                st.session_state.chat_history.append({"query": "Exercise - "+chat["query"], "response": bot_response})
+                                st.rerun()
+
+                        with col2:
+                            if st.button("Skincare", key=f"skincare_button_{index}"):
+                                input_query = f"My question: {chat['query']}. User clarified: Skincare."
+                                response = requests.post(f"{API_URL}/send_message", json={
+                                    "query": input_query,
+                                    "name": st.session_state.name,
+                                    "email": st.session_state.email,
+                                    "age": st.session_state.age,
+                                    "gender": st.session_state.gender
+                                })
+                                bot_response = response.json()["response"]
+                                st.session_state.chat_history.append({"query": "Skincare - "+chat["query"], "response": bot_response})
+                                st.rerun()
+
+                        with col3:
+                            if st.button("Nutrition", key=f"nutrition_button_{index}"):
+                                input_query = f"My question: {chat['query']}. User clarified: Nutrition."
+                                response = requests.post(f"{API_URL}/send_message", json={
+                                    "query": input_query,
+                                    "name": st.session_state.name,
+                                    "email": st.session_state.email,
+                                    "age": st.session_state.age,
+                                    "gender": st.session_state.gender
+                                })
+                                bot_response = response.json()["response"]
+                                st.session_state.chat_history.append({"query": "Nutrition - "+chat["query"], "response": bot_response})
+                                st.rerun()
                     
-                    # Show "Yes" button if an intent_response exists
-                    if "intent_response" in chat and chat["intent_response"]:
+                    else:
                         if st.button("Yes", key=f"yes_button_{index}"):
-                            # Re-send the query to FastAPI when "Yes" is clicked
-                            input_query = "My question: "+chat["intent_response"]+"User responded Yes. So provide infromation"
+                            input_query = f"My question: {chat['intent_response']} User responded Yes. So provide information."
                             response = requests.post(f"{API_URL}/send_message", json={
                                 "query": input_query,
                                 "name": st.session_state.name,
@@ -80,15 +127,10 @@ with col2:
                                 "age": st.session_state.age,
                                 "gender": st.session_state.gender
                             })
-
-                            # Extract new response
                             bot_response = response.json()["response"]
-
-                            # Append new response to chat history
-                            st.session_state.chat_history.append({"query": chat["intent_response"]+" Yes!", "response": bot_response})
-
-                            # Rerun script to display new message
+                            st.session_state.chat_history.append({"query": chat["intent_response"] + " Yes!", "response": bot_response})
                             st.rerun()
+
 
         # Process user input after rendering UI
         if submit_button and user_query.strip():

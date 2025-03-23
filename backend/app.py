@@ -43,25 +43,27 @@ intent_responses = {
     "workout_plan": ["I can suggest a workout plan. What’s your fitness goal?"],
     "nutrition_advice": ["Healthy eating is essential! Do you have any dietary preferences?"],
     "skincare": ["Skincare routine is essential! Do you want to build a skincare routine?"],
-    "default": ["I’m not sure I understand. Can you rephrase?"]
+    "common": ["Could you clarify? Are you asking about skincare, exercise, or nutrition?"],
+    "default": ["I’m not sure I understand. Can you rephrase?", "I am trained to only answer questions on fitness, nutrition, and skincare."]
 }
 
 intent_keywords = {
-    "greeting": ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "what's up", "howdy", "yo"],
+    "greeting": ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "what's up"],
     "goodbye": ["bye", "goodbye", "see you", "farewell", "take care", "later", "adios", "ciao", "catch you later", "peace out"],
     "workout_plan": [
-        "workout", "exercise", "gym", "fitness", "training", "bodybuilding", "cardio", "weights", "lifting", "aerobics",
-        "strength", "calisthenics", "yoga", "pilates", "crossfit", "endurance", "stamina", "HIIT", "running", "jogging"
+        "exercise", "gym", "bodybuilding", "weights", "lifting", "calisthenics", "yoga", "pilates", "crossfit", "HIIT", "running", "jogging", "workout", "exercise"
     ],
     "nutrition_advice": [
-        "diet", "nutrition", "food", "calories", "protein", "carbs", "fat", "macros", "meal plan", "healthy eating",
-        "fiber", "vitamins", "minerals", "hydration", "superfoods", "weight loss", "metabolism", "vegan", "keto", "paleo"
+        "diet", "calories", "macros", "meal plan", "vegan", "keto", "paleo", "nutrition", "food"
     ],
     "skincare": [
-        "skincare", "skin", "moisturizer", "sunscreen", "acne", "pimples", "serum", "cleanser", "toner", "hydration",
-        "exfoliation", "anti-aging", "blemishes", "blackheads", "pores", "oily skin", "dry skin", "sensitive skin", "glowing skin", "dark spots"
+        "skincare", "moisturizer", "sunscreen", "acne", "pimples", "serum", "cleanser", "toner", "exfoliation", "anti-aging", "blemishes", "blackheads", "pores", "dark spots"
+    ],
+    "common": [
+        "fitness", "training", "healthy", "hydration", "weight loss", "metabolism", "protein", "carbs", "fat", "minerals", "vitamins", "fiber", "superfoods", "strength", "stamina"
     ]
 }
+
 
 
 @app.get("/")
@@ -71,39 +73,58 @@ async def read_root():
 # Intent recognition function
 def recognize_intent(user_input: str):
     user_input = user_input.lower()
+    
+    # First, check all intents except "common"
     for intent, keywords in intent_keywords.items():
-        if any(keyword in user_input for keyword in keywords):
-            return intent
-    return ""
+        if intent != "common":  # Skip "common" in this loop
+            if any(keyword in user_input for keyword in keywords):
+                return intent
+    
+    # Finally, check "common"
+    if any(keyword in user_input for keyword in intent_keywords["common"]):
+        return "common"
+    
+    return "default"
+
 
 # API Endpoint for sending message to AI model
 @app.post("/send_message")
 async def translate_text(request: QueryRequest):
     try:
-        # Define messages for translation
-        messages = [
-            ("system", f"You are a skincare expert. Can you help a {request.gender} who is a {request.age} years old."),
-            ("human", request.query),
-        ]
-
-        intent = recognize_intent(request.query)
         # Recognize intent
         intent = recognize_intent(request.query)
-        print("Intent ",intent)
-        # Check if intent exists and then choose a response
-        if intent and intent in intent_responses:
-            intent_response = random.choice(intent_responses[intent])
-        else:
-            intent_response = ""
+        print("Intent:", intent)
 
-        print("Intent Response ",intent_response)
+        # If intent is greeting, goodbye, or default, return a direct response
+        if intent in ["greeting", "goodbye", "default", "common"]:
+            response  = random.choice(intent_responses[intent])
+            if intent == "common":
+                return {"query": request.query, "intent_response": "common", "response": response}
+            return {"query": request.query, "intent_response": "", "response": response}
+
+        # Define prompt based on intent
+        if intent == "workout_plan":
+            system_message = f"You are a certified fitness coach. Can you create a personalized workout plan for a {request.gender} who is {request.age} years old?"
+        elif intent == "nutrition_advice":
+            system_message = f"You are a nutrition expert. Provide dietary recommendations for a {request.gender} who is {request.age} years old."
+        elif intent == "skincare":
+            system_message = f"You are a dermatologist. Give skincare recommendations for a {request.gender} who is {request.age} years old."
+        else:
+            system_message = f"You are an expert. Can you help a {request.gender} who is {request.age} years old?"
+
+        # Fetch a relevant intent response if available
+        intent_response = random.choice(intent_responses[intent])
+        print("Intent Response:", intent_response)
 
         # Invoke Gemini model
+        messages = [
+            ("system", system_message),
+            ("human", request.query),
+        ]
         response = llm.invoke(messages)
 
         # Return JSON response
-        return {"query":request.query, "intent_response":intent_response, "response": response.content}
+        return {"query": request.query, "intent_response": intent_response, "response": response.content}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
