@@ -64,7 +64,8 @@ with col2:
                 "age": st.session_state.age,
                 "gender": st.session_state.gender
             })
-            st.write(response.json()["message"])  # Placeholder response
+            st.write("Query: ",response.json()["query"])  # Placeholder response
+            st.write("Response: ",response.json()["response"])  # Placeholder response
         
     else:
         # Default content when logged out

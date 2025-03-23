@@ -54,7 +54,7 @@ async def translate_text(request: QueryRequest):
         response = llm.invoke(messages)
 
         # Return JSON response
-        return {"message": response.content}
+        return {"query":request.query, "response": response.content}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
