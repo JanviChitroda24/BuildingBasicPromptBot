@@ -5,3 +5,4 @@ requests
 langchain-google-genai
 dotenv
 diagrams
+regex

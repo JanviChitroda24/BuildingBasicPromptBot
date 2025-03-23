@@ -67,6 +67,16 @@ with col2:
                     st.write(chat["query"])
                 with st.chat_message("assistant"):
                     st.write(chat["response"])
+                if "intent_response" in chat and chat["intent_response"]:
+                    # Display the intent response as a separate message
+                    with st.chat_message("assistant"):
+                        st.write(chat["intent_response"])
+
+
+                history_limit = 5  # Change this number to control history depth
+                conversation_history = "\n".join(
+                    [f"User: {chat['query']}" for chat in st.session_state.chat_history[-history_limit:]]
+                )
 
                 # Show "Yes" button if an intent_response exists
                 if "intent_response" in chat and chat["intent_response"]:
@@ -83,7 +93,8 @@ with col2:
                                     "name": st.session_state.name,
                                     "email": st.session_state.email,
                                     "age": st.session_state.age,
-                                    "gender": st.session_state.gender
+                                    "gender": st.session_state.gender,
+                                    "query_history": conversation_history
                                 })
                                 bot_response = response.json()["response"]
                                 st.session_state.chat_history.append({"query": "Exercise - "+chat["query"], "response": bot_response})
@@ -97,7 +108,8 @@ with col2:
                                     "name": st.session_state.name,
                                     "email": st.session_state.email,
                                     "age": st.session_state.age,
-                                    "gender": st.session_state.gender
+                                    "gender": st.session_state.gender,
+                                    "query_history": conversation_history
                                 })
                                 bot_response = response.json()["response"]
                                 st.session_state.chat_history.append({"query": "Skincare - "+chat["query"], "response": bot_response})
@@ -111,7 +123,8 @@ with col2:
                                     "name": st.session_state.name,
                                     "email": st.session_state.email,
                                     "age": st.session_state.age,
-                                    "gender": st.session_state.gender
+                                    "gender": st.session_state.gender,
+                                    "query_history": conversation_history
                                 })
                                 bot_response = response.json()["response"]
                                 st.session_state.chat_history.append({"query": "Nutrition - "+chat["query"], "response": bot_response})
@@ -125,7 +138,8 @@ with col2:
                                 "name": st.session_state.name,
                                 "email": st.session_state.email,
                                 "age": st.session_state.age,
-                                "gender": st.session_state.gender
+                                "gender": st.session_state.gender,
+                                "query_history": conversation_history
                             })
                             print(response.json())
                             bot_response = response.json()["response"]
@@ -135,13 +149,21 @@ with col2:
 
         # Process user input after rendering UI
         if submit_button and user_query.strip():
+
+            history_limit = 5  # Change this number to control history depth
+            conversation_history = "\n".join(
+                [f"User: {chat['query']}" for chat in st.session_state.chat_history[-history_limit:]]
+            )
+
+        
             # Call FastAPI endpoint
             response = requests.post(f"{API_URL}/send_message", json={
                 "query": user_query,
                 "name": st.session_state.name,
                 "email": st.session_state.email,
                 "age": st.session_state.age,
-                "gender": st.session_state.gender
+                "gender": st.session_state.gender,
+                "query_history": conversation_history
             })
 
             # Extract response
@@ -150,9 +172,9 @@ with col2:
 
             # Store query and response in session state
             if intent_response:
-                st.session_state.chat_history.append({"query": user_query, "response": intent_response, "intent_response": intent_response})
-
-            st.session_state.chat_history.append({"query": user_query, "response": bot_response})
+                st.session_state.chat_history.append({"query": user_query, "response": bot_response, "intent_response": intent_response})
+            else:
+                st.session_state.chat_history.append({"query": user_query, "response": bot_response})
 
             # Rerun script to update UI
             st.rerun()
